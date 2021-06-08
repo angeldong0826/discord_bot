@@ -6,6 +6,9 @@ import os
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+from dotenv import load_dotenv
+load_dotenv('.env')
+
 bot = commands.Bot(command_prefix='!')
 
 @bot.command(name="idea", help="Get a side project idea")
@@ -37,11 +40,8 @@ async def calc(ctx, x: float, fn: str, y: float):
 @bot.command(name="search", help="Look for new song release by artist")
 async def search(ctx, artist: str):
 
-    cid = '0c7d55253fcc4ef78a49bc9493591ad6'
-    secret = '79b9ade77bdc477d81f8c43c20ec872e'
-
-    # cid = os.environ.get('SPOTIFY_CID')
-    # secret = os.environ.get('SPOTIFY_SECRET')
+    cid = os.getenv('SPOTIFY_CID')
+    secret = os.getenv('SPOTFY_SECRET')
 
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -59,8 +59,6 @@ async def search(ctx, artist: str):
             await ctx.send('"' + new_release['albums']['items'][i]['name'] + '" by ' + artist) # return corresponding song title
             await ctx.send(new_release['albums']['items'][i]['external_urls']['spotify']) # return corresponding artist spotify link
 
-# cid = '0c7d55253fcc4ef78a49bc9493591ad6'
-# secret = '79b9ade77bdc477d81f8c43c20ec872e'
 
 # client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 # sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -79,12 +77,6 @@ async def search(ctx, artist: str):
 #         print(new_release['albums']['items'][j]['name'])
 #         # print(i+j)
 
-# import os
-# cid = os.environ.get('SPOTIFY_CID')
-# secret = os.environ.get('SPOTIFY_SECRET')
-
-# print(cid)
-# print(secret)
 
 # make sure to create a token file (in real life use env variables)
 with open("BOT_TOKEN.txt", "r") as token_file:
