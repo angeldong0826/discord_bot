@@ -6,7 +6,7 @@ import random
 import psycopg2
 import os
 import spotipy
-# import sys
+import sys
 from spotipy.oauth2 import SpotifyClientCredentials
 from dotenv import load_dotenv
 
@@ -26,9 +26,7 @@ try:
 except:
     print ("Unable to connect to database")
 
-#make cursor for establish connection
-cur = conn.cursor()
-
+cur = conn.cursor() #make cursor for establish connection
 
 #initialize bot
 bot = commands.Bot(command_prefix='!')
@@ -64,10 +62,8 @@ async def calc(ctx, x: float, fn: str, y: float):
 async def login(ctx):
 
     #display records before inserting
-    cur.execute("Select * from users")
-    results = cur.fetchall()
-    for i in results:
-        print(i)
+    print("From 'users' table:")
+    cur.copy_to(sys.stdout, 'users', sep='\t')
 
     #statement to insert record
     cur.execute(
@@ -79,14 +75,11 @@ async def login(ctx):
             WHERE u.discordid= %s)""", (ctx.author.id, ctx.author.name, ctx.author.id)
         )
 
-    print("After insertion....")
+    print("\nAfter insertion...\n")
 
     # print records after insertion
-    cur.execute("Select * from users")
-    myresult = cur.fetchall()
-    for i in myresult:
-        print(i)
-    cur.execute("Commit")
+    print("From 'users' table:")
+    cur.copy_to(sys.stdout, 'users', sep='\t')
 
     await(ctx.send("User info successfully logged/found."))
     await(ctx.send("username: " + ctx.author.name))
@@ -96,18 +89,15 @@ async def login(ctx):
     # close connection
     conn.close()
 
-    #cur.copy_to(sys.stdout, 'users', sep='\t')
+# cur.copy_to(sys.stdout, 'artists', sep='\t')
 
 #add favorite artist feature
 @bot.command(name="add", help="Add your favorite artists")
 async def add(ctx, artist: str):
 
     #display artists before inserting
-    cur.execute("Select * from artists")
-    results = cur.fetchall()
     print("From 'artists' table:")
-    for i in results:
-        print(i)
+    cur.copy_to(sys.stdout, 'artists', sep='\t')
     
     #statement to insert artist
     cur.execute(
@@ -119,51 +109,40 @@ async def add(ctx, artist: str):
             WHERE a.name= %s)""", (artist.lower(), artist.lower())
         )
     
-    print("After insertion....")
+    print("\nAfter insertion...\n")
 
     #print artists after insertion
-    cur.execute("Select * from artists")
-    myresult = cur.fetchall()
     print("From 'artists' table:")
-    for i in myresult:
-        print(i)
+    cur.copy_to(sys.stdout, 'artists', sep='\t')
     
     cur.execute("Commit")
     await(ctx.send("Artist successfully added."))
     await(ctx.send("artist name: " + artist.lower()))
 
     #display favorites before inserting
-    cur.execute("Select * from favorites")
-    results = cur.fetchall()
-    print("From 'favorites' table:")
-    for i in results:
-        print(i)
+    print("\nFrom 'favorites' table:")
+    cur.copy_to(sys.stdout, 'favorites', sep='\t')
 
     #statement to insert favorite
     id = cur.execute("SELECT artistid FROM artists WHERE name=%s", (artist.lower()))
     # id = cur.execute("SELECT artistid FROM artists WHERE name =%s", ("olivia rodrigo"))
     # id = cur.execute("SELECT artistid FROM artists WHERE name='olivia rodrigo")
 
-    cur.execute(
-        "INSERT INTO favorites (artistid, discordid) VALUES (%s, %s)", (id, ctx.author.id)
-    )
+    cur.execute("INSERT INTO favorites (artistid, discordid) VALUES (%s, %s)", (id, ctx.author.id))
 
-    print("After insertion....")
+    print("\nAfter insertion...\n")
 
     #print favorites after insertion
-    cur.execute("Select * from favorites")
-    # rows_affected=cur.rowcount
-    myresult = cur.fetchall()
     print("From 'favorites' table:")
-    for i in myresult:
-        print(i)
+    cur.copy_to(sys.stdout, 'favorites', sep='\t')
 
     cur.execute("Commit")
-    await(ctx.send("Favorite successfully added."))
-    await(ctx.send("favorite name: " + artist.lower()))
-    # print(str(rows_affected) + " records inserted.")
 
-    # close connection
+    await(ctx.send("Artist successfully favored."))
+    #rows_affected=cur.rowcount
+    #print(str(rows_affected) + " records inserted.")
+
+    #close connection
     conn.close()
 
 @bot.command(name="displayartists", help="Display your list of favorite artists")
@@ -187,9 +166,6 @@ async def new(ctx, artist: str):
 
     cid = os.getenv('SPOTIFY_CID')
     secret = os.getenv('SPOTIFY_SECRET')
-
-    # cid='0c7d55253fcc4ef78a49bc9493591ad6'
-    # secret='79b9ade77bdc477d81f8c43c20ec872e'
 
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -221,5 +197,5 @@ async def new(ctx, artist: str):
 # make sure to create a token file (in real life use env variables)
 with open("BOT_TOKEN.txt", "r") as token_file:
     TOKEN = token_file.read()
-    print("Token file read")
+    print("Token file read.\n")
     bot.run(TOKEN)
