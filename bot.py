@@ -165,7 +165,7 @@ async def add(ctx, artist: str):
     # print(str(rows_affected) + " records inserted.")
 
     # close connection
-    # conn.close()
+    conn.close()
 
 @bot.command(name="displayartists", help="Display your list of favorite artists")
 async def displayartists(ctx):
