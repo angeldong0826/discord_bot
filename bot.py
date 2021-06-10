@@ -36,6 +36,7 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 #initialize bot
 bot = commands.Bot(command_prefix='!')
 
+
 #register command
 @bot.command(name = "login")
 async def login(ctx):
@@ -69,14 +70,39 @@ async def login(ctx):
     conn.close() #close connection
 
 
-#add favorite artist feature
+#add favorite artist command
 @bot.command(name="add", help="Add your favorite artists")
 async def add(ctx, artist: str):
+
+    # #check if artist is on spotify
+    # results = sp.search(artist)
+    # try:
+    #     artist = results['tracks']['items'][0]['artists'] #if found in database
+    # except:
+    #     await ctx.send("Invalid Artist")
+    #     return
+    # # print(type(artist))
+    # # print(artist)
+    # # print(results)
+
+    results = sp.search(artist)
+    # print(type(results))
+    # print(len(results))
+    # print(results)
+    count = results['tracks']['items']
+    # print(len(count))
+    # print(count)
+    if (len(count) > 0):
+        pass
+    else:
+        await ctx.send("Invalid Artist")
+        print("Invalid Artist")
+        return
 
     #display artists before inserting
     print("From 'artists' table:")
     cur.copy_to(sys.stdout, 'artists', sep='\t')
-    
+
     #statement to insert artist
     cur.execute(
         """INSERT INTO artists (name) 
@@ -84,7 +110,7 @@ async def add(ctx, artist: str):
         WHERE NOT EXISTS ( 
             SELECT * 
             FROM artists as a 
-            WHERE a.name= %s)""", (artist.lower(), artist.lower())
+            WHERE a.name= %s)""", (str(artist.lower()), str(artist.lower()))
         )
     
     print("\nAfter insertion...\n")
