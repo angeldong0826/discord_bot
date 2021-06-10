@@ -75,24 +75,9 @@ async def login(ctx):
 async def add(ctx, artist: str):
 
     # #check if artist is on spotify
-    # results = sp.search(artist)
-    # try:
-    #     artist = results['tracks']['items'][0]['artists'] #if found in database
-    # except:
-    #     await ctx.send("Invalid Artist")
-    #     return
-    # # print(type(artist))
-    # # print(artist)
-    # # print(results)
-
     results = sp.search(artist)
-    # print(type(results))
-    # print(len(results))
-    # print(results)
-    count = results['tracks']['items']
-    # print(len(count))
-    # print(count)
-    if (len(count) > 0):
+    item_count = results['tracks']['items']
+    if (len(item_count) > 0): #if found on spotify
         pass
     else:
         await ctx.send("Invalid Artist")
@@ -148,6 +133,7 @@ async def add(ctx, artist: str):
     
     conn.close() #close connection
 
+
 @bot.command(name="displayartists", help="Display your list of favorite artists")
 async def displayartists(ctx):
     await(ctx.send("Your Favorite Artists:') :"))
@@ -155,6 +141,8 @@ async def displayartists(ctx):
     results = cur.fetchall()
     for i in results:
         await(ctx.send(i))
+    await ctx.send("End of list.")
+
 
 @bot.command(name="displayfavorites")
 async def displayfavorites(ctx):
@@ -164,7 +152,29 @@ async def displayfavorites(ctx):
     for i in results:
         await(ctx.send(i))
     
-#TODO delete command
+
+@bot.command(name="delete", help="delete artist from favorites")
+async def delete(ctx, artist: str):
+    artist = artist.lower()
+
+    # cur.execute("SELECT artistid FROM artists WHERE name = %s", (artist,))
+    # results = cur.fetchall()
+    # print(results)
+    # print(type(results))
+    # cur.execute("DELETE FROM artists where artistid =(%s)", (list(results)))
+
+    cur.execute("SELECT artistid FROM artists WHERE name = %s", (artist,))
+    results = cur.fetchall()
+
+    if (len(results) > 0):
+        cur.execute("DELETE FROM artists where artistid =(%s)", (list(results)))
+        await ctx.send("Artist successfully removed from your favorites")
+    else:
+        await ctx.send("Artist does not / no longer exist in your favorites")
+
+    cur.execute("Commit")
+    conn.close()
+
 
 @bot.command(name="new", help="Look for new song release by artist")
 async def new(ctx, artist: str):
