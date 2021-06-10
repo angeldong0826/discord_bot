@@ -103,13 +103,14 @@ async def login(ctx):
 @bot.command(name="add", help="Add your favorite artists")
 async def add(ctx, artist: str):
 
-    #display favorites before inserting
+    #display artists before inserting
     cur.execute("Select * from artists")
     results = cur.fetchall()
+    print("From 'artists' table:")
     for i in results:
         print(i)
     
-    #statement to insert favorite
+    #statement to insert artist
     cur.execute(
         """INSERT INTO artists (name) 
         SELECT %s
@@ -121,17 +122,48 @@ async def add(ctx, artist: str):
     
     print("After insertion....")
 
-    # print records after insertion
+    #print artists after insertion
     cur.execute("Select * from artists")
     myresult = cur.fetchall()
+    print("From 'artists' table:")
     for i in myresult:
         print(i)
+    
     cur.execute("Commit")
-
     await(ctx.send("Artist successfully added."))
     await(ctx.send("artist name: " + artist.lower()))
-    # print(cur.rowcount, "records inserted.")
-    
+
+    #display favorites before inserting
+    cur.execute("Select * from favorites")
+    results = cur.fetchall()
+    print("From 'favorites' table:")
+    for i in results:
+        print(i)
+
+    #statement to insert favorite
+    id = cur.execute("SELECT artistid FROM artists WHERE name=%s", (artist.lower()))
+    # id = cur.execute("SELECT artistid FROM artists WHERE name =%s", ("olivia rodrigo"))
+    # id = cur.execute("SELECT artistid FROM artists WHERE name='olivia rodrigo")
+
+    cur.execute(
+        "INSERT INTO favorites (artistid, discordid) VALUES (%s, %s)", (id, ctx.author.id)
+    )
+
+    print("After insertion....")
+
+    #print favorites after insertion
+    cur.execute("Select * from favorites")
+    # rows_affected=cur.rowcount
+    myresult = cur.fetchall()
+    print("From 'favorites' table:")
+    for i in myresult:
+        print(i)
+
+    cur.execute("Commit")
+    await(ctx.send("Favorite successfully added."))
+    await(ctx.send("favorite name: " + artist.lower()))
+    # print(str(rows_affected) + " records inserted.")
+
     # close connection
     # conn.close()
 
@@ -139,6 +171,14 @@ async def add(ctx, artist: str):
 async def displayartists(ctx):
     await(ctx.send("Your Favorite Artists:') :"))
     cur.execute("Select * from artists")
+    results = cur.fetchall()
+    for i in results:
+        await(ctx.send(i))
+
+@bot.command(name="displayfavorites")
+async def displayfavorites(ctx):
+    await(ctx.send("Your Favorite Artists:"))
+    cur.execute("Select * from favorites")
     results = cur.fetchall()
     for i in results:
         await(ctx.send(i))
