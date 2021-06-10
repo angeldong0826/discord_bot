@@ -1,6 +1,3 @@
-# from os import name
-# import re
-# from discord.enums import UserFlags
 from discord.ext import commands
 import psycopg2
 import os
@@ -24,8 +21,6 @@ try:
 except:
     print ("Unable to connect to database.")
 
-cur = conn.cursor() #make cursor to establish connection
-
 #connect to spotify api
 cid = os.getenv('SPOTIFY_CID')
 secret = os.getenv('SPOTIFY_SECRET')
@@ -40,6 +35,7 @@ bot = commands.Bot(command_prefix='!')
 #register command
 @bot.command(name = "login")
 async def login(ctx):
+    cur = conn.cursor() #make cursor to establish connection
 
     #display records before inserting
     print("From 'users' table:")
@@ -73,6 +69,8 @@ async def login(ctx):
 #add favorite artist command
 @bot.command(name="add", help="Add your favorite artists")
 async def add(ctx, artist: str):
+    cur = conn.cursor() #make cursor to establish connection
+    artist = artist.lower()
 
     # #check if artist is on spotify
     results = sp.search(artist)
@@ -81,7 +79,6 @@ async def add(ctx, artist: str):
         pass
     else:
         await ctx.send("Invalid Artist")
-        print("Invalid Artist")
         return
 
     #display artists before inserting
@@ -95,7 +92,7 @@ async def add(ctx, artist: str):
         WHERE NOT EXISTS ( 
             SELECT * 
             FROM artists as a 
-            WHERE a.name= %s)""", (str(artist.lower()), str(artist.lower()))
+            WHERE a.name= %s)""", (str(artist), str(artist))
         )
     
     print("\nAfter insertion...\n")
@@ -106,18 +103,26 @@ async def add(ctx, artist: str):
     
     cur.execute("Commit")
     await(ctx.send("Artist successfully added."))
-    await(ctx.send("artist name: " + artist.lower()))
+    await(ctx.send("artist name: " + artist))
 
     #display favorites before inserting
     print("\nFrom 'favorites' table:")
     cur.copy_to(sys.stdout, 'favorites', sep='\t')
 
     #statement to insert favorite
-    id = cur.execute("SELECT artistid FROM artists WHERE name=%s", (artist.lower()))
-    # id = cur.execute("SELECT artistid FROM artists WHERE name =%s", ("olivia rodrigo"))
-    # id = cur.execute("SELECT artistid FROM artists WHERE name='olivia rodrigo")
+    cur.execute("SELECT artistid FROM artists WHERE name = %s", (artist,))
+    id = cur.fetchall() #obtain corresponding id of input artist
 
-    cur.execute("INSERT INTO favorites (artistid, discordid) VALUES (%s, %s)", (id, ctx.author.id))
+    print(type(id))
+
+    cur.execute("SELECT * FROM favorites WHERE (artistid, discordid) = (%s, %s)", (id, ctx.author.id,))
+    match = cur.fetchall()
+
+    if(len(match) == 0):
+        cur.execute("INSERT INTO favorites (artistid, discordid) VALUES (%s, %s)", (list(id), ctx.author.id))
+        await ctx.send("Artist successfully favored.")
+    else:
+        await ctx.send("Artist already favored.")
 
     print("\nAfter insertion...\n")
 
@@ -125,18 +130,18 @@ async def add(ctx, artist: str):
     print("From 'favorites' table:")
     cur.copy_to(sys.stdout, 'favorites', sep='\t')
 
-    cur.execute("Commit")
-
     await(ctx.send("Artist successfully favored."))
     #rows_affected=cur.rowcount
     #print(str(rows_affected) + " records inserted.")
-    
+
+    cur.execute("Commit")
     conn.close() #close connection
 
 
 @bot.command(name="displayartists", help="Display your list of favorite artists")
 async def displayartists(ctx):
-    await(ctx.send("Your Favorite Artists:') :"))
+    cur = conn.cursor() #make cursor to establish connection
+    await(ctx.send("Your Favorite Artists:"))
     cur.execute("Select * from artists")
     results = cur.fetchall()
     for i in results:
@@ -146,6 +151,7 @@ async def displayartists(ctx):
 
 @bot.command(name="displayfavorites")
 async def displayfavorites(ctx):
+    cur = conn.cursor() #make cursor to establish connection
     await(ctx.send("Your Favorite Artists:"))
     cur.execute("Select * from favorites")
     results = cur.fetchall()
@@ -155,22 +161,18 @@ async def displayfavorites(ctx):
 
 @bot.command(name="delete", help="delete artist from favorites")
 async def delete(ctx, artist: str):
+    cur = conn.cursor() #make cursor to establish connection
     artist = artist.lower()
-
-    # cur.execute("SELECT artistid FROM artists WHERE name = %s", (artist,))
-    # results = cur.fetchall()
-    # print(results)
-    # print(type(results))
-    # cur.execute("DELETE FROM artists where artistid =(%s)", (list(results)))
 
     cur.execute("SELECT artistid FROM artists WHERE name = %s", (artist,))
     results = cur.fetchall()
 
     if (len(results) > 0):
         cur.execute("DELETE FROM artists where artistid =(%s)", (list(results)))
-        await ctx.send("Artist successfully removed from your favorites")
+        await ctx.send("Artist removed from your favorites.")
     else:
-        await ctx.send("Artist does not / no longer exist in your favorites")
+        await ctx.send("Artist does not/no longer exists in your favorites.")
+        await ctx.send("Use command !displayartists to view your favorite artists list.")
 
     cur.execute("Commit")
     conn.close()
@@ -200,20 +202,6 @@ async def new(ctx, artist: str):
     #     for j in range(song_count):
     #         print(new_release['albums']['items'][j]['name'])
     #         # print(i+j)
-
-#calculator command
-@bot.command(name="calc", help="Perform a calculation where fn is either +,-,*, or /")
-async def calc(ctx, x: float, fn: str, y: float):
-    if fn == '+':
-        await ctx.send(x + y)
-    elif fn == '-':
-        await ctx.send(x - y)
-    elif fn == '*':
-        await ctx.send(x * y)
-    elif fn == '/':
-        await ctx.send(x / y)
-    else:
-        await ctx.send("We only support 4 function operations")
 
 #opening personal token file
 with open("BOT_TOKEN.txt", "r") as token_file:
