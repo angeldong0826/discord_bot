@@ -6,13 +6,12 @@ import random
 import psycopg2
 import os
 import spotipy
-import sys
+# import sys
 from spotipy.oauth2 import SpotifyClientCredentials
 from dotenv import load_dotenv
 
 #load dotenv for sensitive information purposes
 load_dotenv('.env')
-
 
 #connect to database
 try:
@@ -187,10 +186,10 @@ async def displayfavorites(ctx):
 async def new(ctx, artist: str):
 
     cid = os.getenv('SPOTIFY_CID')
-    secret = os.getenv('SPOTFY_SECRET')
+    secret = os.getenv('SPOTIFY_SECRET')
 
-    cid='0c7d55253fcc4ef78a49bc9493591ad6'
-    secret='79b9ade77bdc477d81f8c43c20ec872e'
+    # cid='0c7d55253fcc4ef78a49bc9493591ad6'
+    # secret='79b9ade77bdc477d81f8c43c20ec872e'
 
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
