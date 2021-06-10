@@ -137,7 +137,6 @@ async def new(ctx, artist: str):
 #         # print(i+j)
 
 
-
 # make sure to create a token file (in real life use env variables)
 with open("BOT_TOKEN.txt", "r") as token_file:
     TOKEN = token_file.read()
