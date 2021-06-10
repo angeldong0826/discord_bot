@@ -8,7 +8,6 @@ import os
 import spotipy
 import sys
 from spotipy.oauth2 import SpotifyClientCredentials
-
 from dotenv import load_dotenv
 
 #load dotenv for sensitive information purposes
@@ -35,7 +34,7 @@ cur = conn.cursor()
 #initialize bot
 bot = commands.Bot(command_prefix='!')
 
-
+#idea feature
 @bot.command(name="idea", help="Get a side project idea")
 async def idea(ctx):
     await ctx.send("Ideas are hard")
@@ -47,7 +46,7 @@ async def idea(ctx):
     idea = f'Create a new {random.choice(topics)} that helps with {random.choice(areas)}! :slight_smile:'
     await ctx.send(idea)
 
-
+#calculator feature
 @bot.command(name="calc", help="Perform a calculation where fn is either +,-,*, or /")
 async def calc(ctx, x: float, fn: str, y: float):
     if fn == '+':
@@ -61,6 +60,7 @@ async def calc(ctx, x: float, fn: str, y: float):
     else:
         await ctx.send("We only support 4 function operations")
 
+#register feature
 @bot.command(name = "login")
 async def login(ctx):
 
@@ -84,7 +84,6 @@ async def login(ctx):
 
     # print records after insertion
     cur.execute("Select * from users")
-
     myresult = cur.fetchall()
     for i in myresult:
         print(i)
@@ -93,13 +92,56 @@ async def login(ctx):
     await(ctx.send("User info successfully logged/found."))
     await(ctx.send("username: " + ctx.author.name))
     await(ctx.send("discord id: " + str(ctx.author.id)))
-    print(cur.rowcount, "records inserted.")
+    # print(cur.rowcount, "records inserted.")
+    
+    # close connection
+    conn.close()
+
+    #cur.copy_to(sys.stdout, 'users', sep='\t')
+
+#add favorite artist feature
+@bot.command(name="add", help="Add your favorite artists")
+async def add(ctx, artist: str):
+
+    #display favorites before inserting
+    cur.execute("Select * from artists")
+    results = cur.fetchall()
+    for i in results:
+        print(i)
+    
+    #statement to insert favorite
+    cur.execute(
+        """INSERT INTO artists (name) 
+        SELECT %s
+        WHERE NOT EXISTS ( 
+            SELECT * 
+            FROM artists as a 
+            WHERE a.name= %s)""", (artist.lower(), artist.lower())
+        )
+    
+    print("After insertion....")
+
+    # print records after insertion
+    cur.execute("Select * from artists")
+    myresult = cur.fetchall()
+    for i in myresult:
+        print(i)
+    cur.execute("Commit")
+
+    await(ctx.send("Artist successfully added."))
+    await(ctx.send("artist name: " + artist.lower()))
+    # print(cur.rowcount, "records inserted.")
     
     # close connection
     # conn.close()
 
-# cur.copy_to(sys.stdout, 'users', sep='\t')
-
+@bot.command(name="displayartists", help="Display your list of favorite artists")
+async def displayartists(ctx):
+    await(ctx.send("Your Favorite Artists:') :"))
+    cur.execute("Select * from artists")
+    results = cur.fetchall()
+    for i in results:
+        await(ctx.send(i))
 
 @bot.command(name="new", help="Look for new song release by artist")
 async def new(ctx, artist: str):
@@ -113,18 +155,18 @@ async def new(ctx, artist: str):
     client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
-    # results = sp.search(q=artist)
+    results = sp.search(q=artist)
 
-    # for idx, track in enumerate(results['tracks']['items']):
-    #     await ctx.send(track['name'])
+    for idx, track in enumerate(results['tracks']['items']):
+        await ctx.send(track['name'])
 
-    song_count = 50
-    new_release = sp.new_releases(None, song_count, 0)
+    # song_count = 50
+    # new_release = sp.new_releases(None, song_count, 0)
 
-    for i in range(song_count):
-        if new_release['albums']['items'][i]['artists'][0]['name'] == artist: # if artist names match
-            await ctx.send('"' + new_release['albums']['items'][i]['name'] + '" by ' + artist) # return corresponding song title
-            await ctx.send(new_release['albums']['items'][i]['external_urls']['spotify']) # return corresponding artist spotify link
+    # for i in range(song_count):
+    #     if new_release['albums']['items'][i]['artists'][0]['name'] == artist: # if artist names match
+    #         await ctx.send('"' + new_release['albums']['items'][i]['name'] + '" by ' + artist) # return corresponding song title
+    #         await ctx.send(new_release['albums']['items'][i]['external_urls']['spotify']) # return corresponding artist spotify link
 
 
 # for i in range(0, 1000, 50):
